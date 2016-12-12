@@ -10,35 +10,51 @@
 
 
 int main(int argc, char *argv[]){
-    int semid, sc;
+    int semid;
     int shmid, shc;
     int sem_key=ftok("control.c", 22);
     int shm_key=ftok("client.c", 22); 
     int readfd,writefd;
-
-    semid = semget(sem_key, 1, IPC_CREAT | 0644 );
-	shmid = shmget(shm_key, 100, IPC_CREAT | 0644);
-
-	char input[1000];
-	struct sembuf buf = {0, -1, SEM_UNDO};
-	semop(semid, &buf, 1);
-	shmat(shmid, 0, 0);
-    readfd = open("story.txt", O_RDONLY);
-	writefd = open("story.txt", O_CREAT | O_APPEND, 0644);
-	char message[(*mem) + 1];
-	lseek(readfd, (*mem) * -1, SEEK_END);
-	read(writefd, message, (*mem));
-	message[(*mem)] = 0;
-	printf("story: %s",message);
     
-    printf("Type to add to story");
+    printf("wait for semaphore...\n");
+    
+    //semaphore down
+    semid = semget(sem_key, 1, 0);
+    struct sembuf buf = {0, -1, SEM_UNDO};
+    semop(semid, &buf, 1);
+    
+    //access memory segment
+	shmid = shmget(shm_key, 4, 0644);
+	int* mem = shmat(shmid, &shc, 0);
+    shc = 0;
+    int size = *mem;
+    
+    //get last line from story.txt
+    char message[size + 1];
+    readfd = open("story.txt", O_RDONLY);
+	lseek(readfd, -1 * size, SEEK_END);
+	read(writefd, message, size);
+    message[size] = 0;
+	printf("previous line: %s\n",message);
+    
+    //write new line from user to story.txt
+    char input[1000];
+    printf("your new line: ");
 	fgets(input, 1000, stdin);
-	write(writefd, input, strlen(input));
-	*mem = strlen(input);
-
-	buf.sem_num = 1;
+	writefd = open("story.txt", O_WRONLY | O_APPEND, 0644);
+    write(writefd, input, strlen(input));
+    
+    //update shm
+    *mem = strlen(input);
+    
+    //semaphore up
+	buf.sem_op = 1;
 	semop(semid, &buf, 1);
-   
+    
+    //detach semaphore
+    shmdt(&shc);
+    
+    //close fd
     close(readfd);
     close(writefd);   
 	return 0;

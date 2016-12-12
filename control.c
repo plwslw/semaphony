@@ -38,9 +38,10 @@ int main(int argc, char* argv[]){
     sc = semctl(semid, 0, SETVAL, su);
     printf("semaphore key: %#x\n", sem_key); //prints key
 
-    shmid = shmget(shm_key, 100, IPC_CREAT | IPC_EXCL | 0644);
-    shmat(shmid, &shc, 0);
-    shc = 0;
+    shmid = shmget(shm_key, 4, IPC_CREAT | IPC_EXCL | 0644);
+    int * mem = shmat(shmid, &shc, 0);
+    *mem = 0
+    shc = 0
     shmdt(&shc);
       
     printf("shared memory key: %#x\n", shm_key);
