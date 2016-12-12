@@ -40,8 +40,8 @@ int main(int argc, char* argv[]){
 
     shmid = shmget(shm_key, 4, IPC_CREAT | IPC_EXCL | 0644);
     int * mem = shmat(shmid, &shc, 0);
-    *mem = 0
-    shc = 0
+    *mem = 0;
+    shc = 0;
     shmdt(&shc);
       
     printf("shared memory key: %#x\n", shm_key);
